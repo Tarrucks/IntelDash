@@ -87,6 +87,43 @@ export const healthSchema = z.object({
 });
 export type Health = z.infer<typeof healthSchema>;
 
+// -------- Aviation ---------------------------------------------------------
+
+export const flightSnapshotSchema = z.object({
+  fr24_id: z.string(),
+  hex: z.string(),
+  callsign: z.string().nullable().optional(),
+  lat: z.number(),
+  lon: z.number(),
+  track: z.number().nullable().optional(),
+  alt: z.number().nullable().optional(),
+  gspeed: z.number().nullable().optional(),
+  timestamp: z.string(),
+  reg: z.string().nullable().optional(),
+  type: z.string().nullable().optional(),
+  flight: z.string().nullable().optional(),
+  orig_iata: z.string().nullable().optional(),
+  dest_iata: z.string().nullable().optional(),
+  source: z.string(),
+});
+export type FlightSnapshot = z.infer<typeof flightSnapshotSchema>;
+
+export const liveFlightsSchema = z.object({
+  bbox: z
+    .object({
+      latmin: z.number(),
+      latmax: z.number(),
+      lonmin: z.number(),
+      lonmax: z.number(),
+    })
+    .nullable()
+    .optional(),
+  fetched_at: z.string(),
+  sources: z.array(z.string()),
+  flights: z.array(flightSnapshotSchema),
+});
+export type LiveFlights = z.infer<typeof liveFlightsSchema>;
+
 // -------- Maritime ---------------------------------------------------------
 
 export const vesselSnapshotSchema = z.object({
@@ -158,6 +195,26 @@ export const api = {
     request("POST", "/auth/login", { email, password }, tokenSchema),
 
   me: () => request("GET", "/auth/me", undefined, userSchema),
+
+  aviation: {
+    live: (
+      bbox?: { latmin: number; latmax: number; lonmin: number; lonmax: number },
+      limit?: number,
+    ) => {
+      const params = new URLSearchParams();
+      if (bbox) {
+        params.set("latmin", String(bbox.latmin));
+        params.set("latmax", String(bbox.latmax));
+        params.set("lonmin", String(bbox.lonmin));
+        params.set("lonmax", String(bbox.lonmax));
+      }
+      if (limit) params.set("limit", String(limit));
+      const qs = params.toString();
+      return request("GET", `/aviation/live${qs ? "?" + qs : ""}`, undefined, liveFlightsSchema);
+    },
+    flight: (hex: string) =>
+      request("GET", `/aviation/flights/${hex}`, undefined, flightSnapshotSchema),
+  },
 
   maritime: {
     live: (bbox: { latmin: number; latmax: number; lonmin: number; lonmax: number }) => {
