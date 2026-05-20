@@ -87,6 +87,51 @@ export const healthSchema = z.object({
 });
 export type Health = z.infer<typeof healthSchema>;
 
+// -------- Cyber ------------------------------------------------------------
+
+export const cyberBannerSchema = z.object({
+  port: z.number(),
+  transport: z.string(),
+  product: z.string().nullable().optional(),
+  version: z.string().nullable().optional(),
+  banner: z.string().nullable().optional(),
+  timestamp: z.string().nullable().optional(),
+});
+
+export const cyberHostSchema = z.object({
+  ip: z.string(),
+  hostnames: z.array(z.string()),
+  ports: z.array(z.number()),
+  country_code: z.string().nullable().optional(),
+  city: z.string().nullable().optional(),
+  org: z.string().nullable().optional(),
+  isp: z.string().nullable().optional(),
+  asn: z.string().nullable().optional(),
+  latitude: z.number().nullable().optional(),
+  longitude: z.number().nullable().optional(),
+  last_update: z.string().nullable().optional(),
+  banners: z.array(cyberBannerSchema),
+  source: z.string(),
+});
+export type CyberHost = z.infer<typeof cyberHostSchema>;
+
+export const cyberSearchMatchSchema = z.object({
+  ip: z.string(),
+  port: z.number(),
+  org: z.string().nullable().optional(),
+  product: z.string().nullable().optional(),
+  location: z.record(z.string(), z.unknown()).nullable().optional(),
+  timestamp: z.string().nullable().optional(),
+});
+
+export const cyberSearchSchema = z.object({
+  total: z.number(),
+  query: z.string(),
+  sources: z.array(z.string()),
+  matches: z.array(cyberSearchMatchSchema),
+});
+export type CyberSearch = z.infer<typeof cyberSearchSchema>;
+
 // -------- Aviation ---------------------------------------------------------
 
 export const flightSnapshotSchema = z.object({
@@ -195,6 +240,14 @@ export const api = {
     request("POST", "/auth/login", { email, password }, tokenSchema),
 
   me: () => request("GET", "/auth/me", undefined, userSchema),
+
+  cyber: {
+    host: (ip: string) => request("GET", `/cyber/hosts/${ip}`, undefined, cyberHostSchema),
+    search: (q: string, limit = 10) => {
+      const qs = new URLSearchParams({ q, limit: String(limit) }).toString();
+      return request("GET", `/cyber/search?${qs}`, undefined, cyberSearchSchema);
+    },
+  },
 
   aviation: {
     live: (
