@@ -1,0 +1,23 @@
+[
+  {
+    "id": "327463649664205394",
+    "title": "ESP32 GPS Tracker",
+    "description": "ESP32 reading a NEO-6M GPS module over UART, printing position to the serial monitor. Useful for sensor-sim demos alongside the Maritime and Aviation dashboards.",
+    "url": "https://wokwi.com/projects/327463649664205394",
+    "tags": ["esp32", "gps", "uart"]
+  },
+  {
+    "id": "330914387835175508",
+    "title": "Arduino DHT22 Temperature & Humidity Logger",
+    "description": "Arduino Uno + DHT22 sensor, logging readings to the serial monitor on a 2s interval.",
+    "url": "https://wokwi.com/projects/330914387835175508",
+    "tags": ["arduino", "dht22", "sensor"]
+  },
+  {
+    "id": "340767670300935765",
+    "title": "Pi Pico LED Matrix Demo",
+    "description": "RP2040 driving an 8x8 LED matrix via MAX7219. Good visual demo for embedded sensor sim.",
+    "url": "https://wokwi.com/projects/340767670300935765",
+    "tags": ["pico", "rp2040", "led"]
+  }
+]
