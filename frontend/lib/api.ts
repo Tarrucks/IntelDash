@@ -87,6 +87,37 @@ export const healthSchema = z.object({
 });
 export type Health = z.infer<typeof healthSchema>;
 
+// -------- Web --------------------------------------------------------------
+
+export const webResultSchema = z.object({
+  id: z.string(),
+  title: z.string().nullable().optional(),
+  url: z.string(),
+  published_date: z.string().nullable().optional(),
+  author: z.string().nullable().optional(),
+  score: z.number().nullable().optional(),
+  text: z.string().nullable().optional(),
+});
+export type WebResult = z.infer<typeof webResultSchema>;
+
+export const webSearchSchema = z.object({
+  query: z.string(),
+  autoprompt: z.string().nullable().optional(),
+  sources: z.array(z.string()),
+  results: z.array(webResultSchema),
+});
+export type WebSearch = z.infer<typeof webSearchSchema>;
+
+export const webAnswerSchema = z.object({
+  query: z.string(),
+  sources: z.array(z.string()),
+  answer: z.string(),
+  citations: z.array(
+    z.object({ url: z.string(), title: z.string().nullable().optional() }),
+  ),
+});
+export type WebAnswer = z.infer<typeof webAnswerSchema>;
+
 // -------- Cyber ------------------------------------------------------------
 
 export const cyberBannerSchema = z.object({
@@ -240,6 +271,17 @@ export const api = {
     request("POST", "/auth/login", { email, password }, tokenSchema),
 
   me: () => request("GET", "/auth/me", undefined, userSchema),
+
+  web: {
+    search: (q: string, opts?: { numResults?: number; mode?: string }) => {
+      const params = new URLSearchParams({ q });
+      if (opts?.numResults) params.set("num_results", String(opts.numResults));
+      if (opts?.mode) params.set("mode", opts.mode);
+      return request("GET", `/web/search?${params.toString()}`, undefined, webSearchSchema);
+    },
+    answer: (q: string) =>
+      request("GET", `/web/answer?${new URLSearchParams({ q }).toString()}`, undefined, webAnswerSchema),
+  },
 
   cyber: {
     host: (ip: string) => request("GET", `/cyber/hosts/${ip}`, undefined, cyberHostSchema),
