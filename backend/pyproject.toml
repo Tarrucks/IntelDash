@@ -16,7 +16,8 @@ dependencies = [
     "celery>=5.4",
     "httpx>=0.27",
     "python-jose[cryptography]>=3.3",
-    "passlib[bcrypt]>=1.7",
+    "bcrypt>=4.0",
+    "email-validator>=2.0",
     "python-multipart>=0.0.12",
     "structlog>=24.4",
     "shapely>=2.0",
@@ -47,7 +48,10 @@ extend-exclude = ["alembic/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "SIM", "ARG"]
-ignore = ["E501"]  # let black own line length
+ignore = [
+    "E501",   # let black own line length
+    "B008",   # FastAPI's Depends() in defaults is canonical, not a bug
+]
 
 [tool.black]
 line-length = 100
