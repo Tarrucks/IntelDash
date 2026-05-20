@@ -28,9 +28,13 @@ yarn-debug.log*
 pnpm-debug.log*
 
 # Data / artifacts
+# Ignore downloaded seed data, but keep the small hand-written sample
+# that Alembic loads on a fresh boot.
 data/seed/**/*.csv
+!data/seed/kaggle-ais/sample.csv
 data/seed/**/*.zip
 data/seed/**/*.gdb/
+data/seed/**/schema.json
 data/cache/
 *.sqlite
 *.sqlite3

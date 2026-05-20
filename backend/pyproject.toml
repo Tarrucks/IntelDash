@@ -3,10 +3,6 @@ name = "aperture-backend"
 version = "0.1.0"
 description = "Aperture OSINT platform — FastAPI backend"
 requires-python = ">=3.12"
-readme = "../README.md"
-
-# Phase 0 declares the dependency set we will install in Phase 2. uv will
-# resolve and lock when we actually run `uv sync`.
 dependencies = [
     "fastapi>=0.115",
     "uvicorn[standard]>=0.32",
@@ -25,6 +21,13 @@ dependencies = [
     "structlog>=24.4",
     "shapely>=2.0",
 ]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["app"]
 
 [project.optional-dependencies]
 dev = [
