@@ -3,19 +3,19 @@
 /**
  * `<MapCanvas>` — MapLibre + Deck.gl in interleaved mode.
  *
- * Per CLAUDE.md, Kepler.gl ships its own MapLibre+Deck integration, but
- * for the dashboard map we manage them directly so we own the lifecycle.
- * Deck layers are injected via `useMap().layers`; updating the array
- * triggers a re-render of the overlay.
+ * Layers come from `useMap().layers`; updating that array re-pushes
+ * them into the deck overlay. `interleaved: true` lets Deck render
+ * into MapLibre's WebGL2 context so 3D extrusions and depth-buffer
+ * tricks work as expected.
  *
- * Client-only — wrapped at the call site with `next/dynamic` so SSR
- * doesn't try to evaluate MapLibre's WebGL code.
+ * Client-only via `next/dynamic` (`ssr: false`) at the call site.
  */
 
-import { useEffect, useRef } from "react";
+import { MapboxOverlay } from "@deck.gl/mapbox";
 import maplibregl, { type Map as MaplibreMap } from "maplibre-gl";
-
 import "maplibre-gl/dist/maplibre-gl.css";
+import { useEffect, useRef } from "react";
+
 import { useMap } from "./map-context";
 
 const STYLE_URL =
@@ -24,7 +24,8 @@ const STYLE_URL =
 export function MapCanvas({ className }: { className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MaplibreMap | null>(null);
-  const { viewState, setViewState } = useMap();
+  const overlayRef = useRef<MapboxOverlay | null>(null);
+  const { viewState, setViewState, layers } = useMap();
 
   // Initial mount + teardown.
   useEffect(() => {
@@ -40,7 +41,13 @@ export function MapCanvas({ className }: { className?: string }) {
       attributionControl: { compact: true },
     });
     map.addControl(new maplibregl.NavigationControl(), "top-right");
+
+    // Interleaved mode places Deck layers inside MapLibre's WebGL2 ctx.
+    const overlay = new MapboxOverlay({ interleaved: true, layers: [] });
+    map.addControl(overlay as unknown as maplibregl.IControl);
+
     mapRef.current = map;
+    overlayRef.current = overlay;
 
     const sync = () => {
       const c = map.getCenter();
@@ -57,11 +64,20 @@ export function MapCanvas({ className }: { className?: string }) {
     return () => {
       map.remove();
       mapRef.current = null;
+      overlayRef.current = null;
     };
-    // We intentionally only mount the map once; the sync handler keeps
-    // context in step with user gestures.
+    // Map mounts once; sync handler keeps context fresh on user gestures.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Push layer changes through to the deck overlay.
+  useEffect(() => {
+    const overlay = overlayRef.current;
+    if (!overlay) return;
+    // The shape of `layer` is unknown to the context (it stays decoupled
+    // from deck.gl typings) so we cast at the boundary.
+    overlay.setProps({ layers: layers.map((l) => l.layer) as never });
+  }, [layers]);
 
   return <div ref={ref} className={className ?? "h-full w-full"} aria-label="Map" />;
 }

@@ -87,6 +87,65 @@ export const healthSchema = z.object({
 });
 export type Health = z.infer<typeof healthSchema>;
 
+// -------- Maritime ---------------------------------------------------------
+
+export const vesselSnapshotSchema = z.object({
+  mmsi: z.string(),
+  name: z.string().nullable().optional(),
+  imo: z.string().nullable().optional(),
+  call_sign: z.string().nullable().optional(),
+  vessel_type: z.string().nullable().optional(),
+  time: z.string(),
+  lat: z.number(),
+  lon: z.number(),
+  sog: z.number().nullable().optional(),
+  cog: z.number().nullable().optional(),
+  heading: z.number().nullable().optional(),
+  nav_status: z.string().nullable().optional(),
+  source: z.string(),
+});
+export type VesselSnapshot = z.infer<typeof vesselSnapshotSchema>;
+
+export const liveVesselsSchema = z.object({
+  bbox: z.object({
+    latmin: z.number(),
+    latmax: z.number(),
+    lonmin: z.number(),
+    lonmax: z.number(),
+  }),
+  fetched_at: z.string(),
+  sources: z.array(z.string()),
+  vessels: z.array(vesselSnapshotSchema),
+});
+export type LiveVessels = z.infer<typeof liveVesselsSchema>;
+
+export const vesselDetailSchema = z.object({
+  mmsi: z.string(),
+  name: z.string().nullable().optional(),
+  imo: z.string().nullable().optional(),
+  call_sign: z.string().nullable().optional(),
+  vessel_type: z.string().nullable().optional(),
+  length_m: z.number().nullable().optional(),
+  width_m: z.number().nullable().optional(),
+  flag: z.string().nullable().optional(),
+  last_position: vesselSnapshotSchema.nullable().optional(),
+  position_history_count: z.number(),
+});
+export type VesselDetail = z.infer<typeof vesselDetailSchema>;
+
+// GeoJSON FeatureCollection of LineStrings; loosely typed.
+export const featureCollectionSchema = z.object({
+  type: z.literal("FeatureCollection"),
+  features: z.array(z.record(z.string(), z.unknown())),
+});
+
+export const vesselTracksSchema = z.object({
+  mmsi: z.string(),
+  source: z.string(),
+  tracks: featureCollectionSchema,
+});
+export type VesselTracks = z.infer<typeof vesselTracksSchema>;
+
 // -------- Calls -------------------------------------------------------------
 
 export const api = {
@@ -99,4 +158,17 @@ export const api = {
     request("POST", "/auth/login", { email, password }, tokenSchema),
 
   me: () => request("GET", "/auth/me", undefined, userSchema),
+
+  maritime: {
+    live: (bbox: { latmin: number; latmax: number; lonmin: number; lonmax: number }) => {
+      const q = new URLSearchParams(
+        Object.fromEntries(Object.entries(bbox).map(([k, v]) => [k, String(v)])),
+      );
+      return request("GET", `/maritime/live?${q.toString()}`, undefined, liveVesselsSchema);
+    },
+    vessel: (mmsi: string) =>
+      request("GET", `/maritime/vessels/${mmsi}`, undefined, vesselDetailSchema),
+    tracks: (mmsi: string) =>
+      request("GET", `/maritime/vessels/${mmsi}/tracks`, undefined, vesselTracksSchema),
+  },
 };

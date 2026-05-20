@@ -80,11 +80,7 @@ class ShodanAdapter(SourceAdapter):
         )
 
     @staticmethod
-    def _mock_search(
-        query: str, limit: int
-    ) -> (
-        ShodanSearchResponse
-    ):  # noqa: ARG004 - query is unused in mock, kept for parity with the real call
+    def _mock_search(query: str, limit: int) -> ShodanSearchResponse:  # noqa: ARG004
         matches = [
             ShodanSearchMatch.model_validate(
                 {
