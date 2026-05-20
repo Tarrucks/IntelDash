@@ -1,0 +1,63 @@
+# Aperture local dev stack.
+#
+# Phase 0: only infrastructure (db, redis) is wired. Backend, worker, and
+# frontend services are added in their respective phases. The compose file
+# is intentionally already aware of them so `docker compose config` stays
+# stable as we fill things in.
+
+services:
+  db:
+    # TimescaleDB image that bundles PostGIS — gives us hypertables + spatial
+    # without juggling two extensions across separate images.
+    image: timescale/timescaledb-ha:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aperture}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aperture}
+      POSTGRES_DB: ${POSTGRES_DB:-aperture}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/home/postgres/pgdata/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aperture}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # --- Filled in during Phase 2 -----------------------------------------------
+  # backend:
+  #   build: ./backend
+  #   env_file: .env
+  #   depends_on:
+  #     db: { condition: service_healthy }
+  #     redis: { condition: service_healthy }
+  #   ports: ["8000:8000"]
+  #
+  # worker:
+  #   build: ./backend
+  #   command: celery -A app.workers.celery_app worker -l info
+  #   env_file: .env
+  #   depends_on: [db, redis]
+  #
+  # --- Filled in during Phase 4 -----------------------------------------------
+  # frontend:
+  #   build: ./frontend
+  #   env_file: .env
+  #   depends_on: [backend]
+  #   ports: ["3000:3000"]
+
+volumes:
+  db_data:
+  redis_data:
