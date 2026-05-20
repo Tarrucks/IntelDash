@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  html,
+  body {
+    @apply h-full;
+  }
+
+  body {
+    @apply bg-bg text-fg antialiased;
+    font-feature-settings:
+      "ss01",
+      "cv11";
+  }
+
+  /* MapLibre canvas should fill its container without scroll bleed. */
+  .maplibregl-canvas {
+    outline: none;
+  }
+}
+
+@layer components {
+  .surface {
+    @apply rounded-xl border border-border bg-bg-panel;
+  }
+
+  .surface-elevated {
+    @apply rounded-xl border border-border bg-bg-elevated;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-border bg-bg-elevated px-3 py-1.5 text-sm font-medium text-fg transition-colors hover:bg-bg-panel focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply border-transparent bg-accent text-accent-fg hover:bg-accent/90;
+  }
+
+  .input {
+    @apply w-full rounded-md border border-border bg-bg px-3 py-1.5 text-sm text-fg placeholder:text-fg-subtle focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent;
+  }
+
+  .label {
+    @apply mb-1 block text-xs font-medium text-fg-muted;
+  }
+}
