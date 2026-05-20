@@ -4,6 +4,7 @@ import { ScatterplotLayer, PathLayer } from "@deck.gl/layers";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { api, ApiError, type LiveVessels, type VesselDetail, type VesselTracks } from "@/lib/api";
+import { useActiveCase } from "@/lib/active-case";
 import { useMap } from "@/lib/map-context";
 
 // Cross-source colour map (RGBA). Matches Tailwind's `domain-maritime`
@@ -18,11 +19,34 @@ const SOURCE_COLOR: Record<string, [number, number, number, number]> = {
 
 export default function MaritimePage() {
   const { bbox, setLayer, removeLayer } = useMap();
+  const activeCase = useActiveCase();
   const [data, setData] = useState<LiveVessels | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<VesselDetail | null>(null);
   const [replay, setReplay] = useState<VesselTracks | null>(null);
+  const [pinned, setPinned] = useState(false);
+
+  async function pinToActiveCase() {
+    if (!activeCase || !selected || !selected.last_position) return;
+    setPinned(false);
+    try {
+      await api.cases.pin(activeCase.id, {
+        kind: "vessel",
+        ref_id: selected.mmsi,
+        label: selected.name ?? `MMSI ${selected.mmsi}`,
+        extra: {
+          lat: selected.last_position.lat,
+          lon: selected.last_position.lon,
+          vessel_type: selected.vessel_type,
+          imo: selected.imo,
+        },
+      });
+      setPinned(true);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Pin failed");
+    }
+  }
 
   const fetchVessels = useCallback(async () => {
     setBusy(true);
@@ -250,7 +274,7 @@ export default function MaritimePage() {
             <dt>History</dt>
             <dd className="text-fg">{selected.position_history_count} positions</dd>
           </dl>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => loadReplay(selected.mmsi)}
               className="btn btn-primary"
@@ -261,6 +285,11 @@ export default function MaritimePage() {
             {replay && (
               <button onClick={() => setReplay(null)} className="btn">
                 Clear track
+              </button>
+            )}
+            {activeCase && (
+              <button onClick={pinToActiveCase} className="btn" disabled={pinned}>
+                {pinned ? `Pinned to "${activeCase.title}"` : `Pin to "${activeCase.title}"`}
               </button>
             )}
           </div>

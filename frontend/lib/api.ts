@@ -87,6 +87,46 @@ export const healthSchema = z.object({
 });
 export type Health = z.infer<typeof healthSchema>;
 
+// -------- Cases ------------------------------------------------------------
+
+export const caseStatusSchema = z.enum(["open", "closed", "archived"]);
+export type CaseStatus = z.infer<typeof caseStatusSchema>;
+
+export const entityRefSchema = z.object({
+  id: z.string(),
+  kind: z.string(),
+  ref_id: z.string(),
+  label: z.string(),
+  extra: z.record(z.string(), z.unknown()).nullable().optional(),
+  created_at: z.string(),
+});
+export type EntityRef = z.infer<typeof entityRefSchema>;
+
+export const pinPublicSchema = z.object({
+  id: z.number(),
+  entity: entityRefSchema,
+  notes: z.string().nullable().optional(),
+  pinned_at: z.string(),
+});
+export type PinPublic = z.infer<typeof pinPublicSchema>;
+
+export const casePublicSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  summary: z.string().nullable().optional(),
+  status: caseStatusSchema,
+  owner_id: z.number().nullable().optional(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  pin_count: z.number(),
+});
+export type CasePublic = z.infer<typeof casePublicSchema>;
+
+export const caseDetailSchema = casePublicSchema.extend({
+  pins: z.array(pinPublicSchema),
+});
+export type CaseDetail = z.infer<typeof caseDetailSchema>;
+
 // -------- Web --------------------------------------------------------------
 
 export const webResultSchema = z.object({
@@ -271,6 +311,30 @@ export const api = {
     request("POST", "/auth/login", { email, password }, tokenSchema),
 
   me: () => request("GET", "/auth/me", undefined, userSchema),
+
+  cases: {
+    list: () => request("GET", "/cases", undefined, z.array(casePublicSchema)),
+    create: (title: string, summary?: string) =>
+      request("POST", "/cases", { title, summary }, casePublicSchema),
+    get: (id: string) => request("GET", `/cases/${id}`, undefined, caseDetailSchema),
+    update: (
+      id: string,
+      patch: { title?: string; summary?: string; status?: CaseStatus },
+    ) => request("PATCH", `/cases/${id}`, patch, casePublicSchema),
+    remove: (id: string) => request("DELETE", `/cases/${id}`),
+    pin: (
+      id: string,
+      payload: {
+        kind: string;
+        ref_id: string;
+        label: string;
+        extra?: Record<string, unknown>;
+        notes?: string;
+      },
+    ) => request("POST", `/cases/${id}/pins`, payload, pinPublicSchema),
+    unpin: (id: string, pin_id: number) =>
+      request("DELETE", `/cases/${id}/pins/${pin_id}`),
+  },
 
   web: {
     search: (q: string, opts?: { numResults?: number; mode?: string }) => {
