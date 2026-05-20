@@ -9,7 +9,7 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import auth, aviation, cases, cyber, health, maritime, web
+from app.routers import auth, aviation, cases, cyber, health, maritime, sensors, tooling, web
 
 
 def create_app() -> FastAPI:
@@ -35,6 +35,8 @@ def create_app() -> FastAPI:
     app.include_router(cyber.router)
     app.include_router(web.router)
     app.include_router(cases.router)
+    app.include_router(tooling.router)
+    app.include_router(sensors.router)
     return app
 
 

@@ -87,6 +87,51 @@ export const healthSchema = z.object({
 });
 export type Health = z.infer<typeof healthSchema>;
 
+// -------- Tooling Library + Sensor Sim ------------------------------------
+
+// Recursive tree (folders + url leaves). Schema is mutually recursive,
+// so we use z.lazy to handle the cycle.
+type OsintNode =
+  | { name: string; type: "url"; url: string; tags: string[] }
+  | { name: string; type: "folder"; children: OsintNode[] };
+
+// ``.default([])`` on the input would force callers to handle an
+// optional shape; the backend always returns ``tags`` and ``children``
+// (defaulting server-side), so we require them here.
+export const osintNodeSchema: z.ZodType<OsintNode> = z.lazy(() =>
+  z.discriminatedUnion("type", [
+    z.object({
+      name: z.string(),
+      type: z.literal("url"),
+      url: z.string(),
+      tags: z.array(z.string()),
+    }),
+    z.object({
+      name: z.string(),
+      type: z.literal("folder"),
+      children: z.array(osintNodeSchema),
+    }),
+  ]),
+);
+export type { OsintNode };
+
+export const osintLeafSchema = z.object({
+  name: z.string(),
+  type: z.literal("url"),
+  url: z.string(),
+  tags: z.array(z.string()),
+});
+export type OsintLeaf = z.infer<typeof osintLeafSchema>;
+
+export const wokwiProjectSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string(),
+  url: z.string(),
+  tags: z.array(z.string()),
+});
+export type WokwiProject = z.infer<typeof wokwiProjectSchema>;
+
 // -------- Cases ------------------------------------------------------------
 
 export const caseStatusSchema = z.enum(["open", "closed", "archived"]);
@@ -311,6 +356,22 @@ export const api = {
     request("POST", "/auth/login", { email, password }, tokenSchema),
 
   me: () => request("GET", "/auth/me", undefined, userSchema),
+
+  tooling: {
+    tree: () => request("GET", "/tooling/tree", undefined, osintNodeSchema),
+    search: (q: string) =>
+      request(
+        "GET",
+        `/tooling/leaves?${new URLSearchParams({ q }).toString()}`,
+        undefined,
+        z.array(osintLeafSchema),
+      ),
+  },
+
+  sensors: {
+    projects: () =>
+      request("GET", "/sensors/projects", undefined, z.array(wokwiProjectSchema)),
+  },
 
   cases: {
     list: () => request("GET", "/cases", undefined, z.array(casePublicSchema)),
