@@ -69,3 +69,20 @@ class VesselTracksResponse(BaseModel):
     mmsi: str
     source: Literal["barentswatch", "db", "mock"] = "mock"
     tracks: GeoJSONFeatureCollection
+
+
+class VesselAnomaly(VesselSnapshot):
+    """A vessel snapshot annotated with isolation-forest score + flag."""
+
+    anomaly_score: float
+    is_anomaly: bool
+
+
+class VesselAnomaliesResponse(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    bbox: dict
+    fetched_at: datetime
+    sources: list[str]
+    model_trained_on: int = Field(description="number of rows the model was fit on")
+    vessels: list[VesselAnomaly]

@@ -341,6 +341,26 @@ export const liveVesselsSchema = z.object({
 });
 export type LiveVessels = z.infer<typeof liveVesselsSchema>;
 
+export const vesselAnomalySchema = vesselSnapshotSchema.extend({
+  anomaly_score: z.number(),
+  is_anomaly: z.boolean(),
+});
+export type VesselAnomaly = z.infer<typeof vesselAnomalySchema>;
+
+export const vesselAnomaliesSchema = z.object({
+  bbox: z.object({
+    latmin: z.number(),
+    latmax: z.number(),
+    lonmin: z.number(),
+    lonmax: z.number(),
+  }),
+  fetched_at: z.string(),
+  sources: z.array(z.string()),
+  model_trained_on: z.number(),
+  vessels: z.array(vesselAnomalySchema),
+});
+export type VesselAnomalies = z.infer<typeof vesselAnomaliesSchema>;
+
 export const vesselDetailSchema = z.object({
   mmsi: z.string(),
   name: z.string().nullable().optional(),
@@ -483,5 +503,16 @@ export const api = {
       request("GET", `/maritime/vessels/${mmsi}`, undefined, vesselDetailSchema),
     tracks: (mmsi: string) =>
       request("GET", `/maritime/vessels/${mmsi}/tracks`, undefined, vesselTracksSchema),
+    anomalies: (bbox: { latmin: number; latmax: number; lonmin: number; lonmax: number }) => {
+      const q = new URLSearchParams(
+        Object.fromEntries(Object.entries(bbox).map(([k, v]) => [k, String(v)])),
+      );
+      return request(
+        "GET",
+        `/maritime/anomalies?${q.toString()}`,
+        undefined,
+        vesselAnomaliesSchema,
+      );
+    },
   },
 };

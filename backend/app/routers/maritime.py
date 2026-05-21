@@ -23,10 +23,13 @@ from sqlalchemy.orm import Session
 from app.adapters.registry import get_adapter
 from app.auth.dependencies import get_current_user
 from app.core.db import get_db
+from app.ml.anomaly import get_model
 from app.models.entities import User, Vessel
 from app.models.positions import VesselPosition
 from app.schemas.maritime import (
     LiveVesselsResponse,
+    VesselAnomaliesResponse,
+    VesselAnomaly,
     VesselDetail,
     VesselSnapshot,
     VesselTracksResponse,
@@ -214,6 +217,61 @@ def vessel_detail(
         flag=vessel.flag if vessel else None,
         last_position=snap,
         position_history_count=int(history_count),
+    )
+
+
+@router.get("/anomalies", response_model=VesselAnomaliesResponse)
+def anomalies(
+    latmin: float = Query(..., ge=-90, le=90),
+    latmax: float = Query(..., ge=-90, le=90),
+    lonmin: float = Query(..., ge=-180, le=180),
+    lonmax: float = Query(..., ge=-180, le=180),
+    limit: int = Query(200, ge=1, le=1000),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_user),
+) -> VesselAnomaliesResponse:
+    """Live vessels inside bbox, scored by the isolation-forest model.
+
+    Returns the same shape as ``/maritime/live`` with two extra fields
+    per vessel (``anomaly_score``, ``is_anomaly``). The frontend uses
+    these to recolour the existing maritime layer rather than building
+    a new one.
+    """
+    if latmin >= latmax or lonmin >= lonmax:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="latmin must be < latmax and lonmin must be < lonmax",
+        )
+
+    # Reuse the same fusion logic as /live by calling the function.
+    base = live(  # type: ignore[misc]
+        latmin=latmin,
+        latmax=latmax,
+        lonmin=lonmin,
+        lonmax=lonmax,
+        limit=limit,
+        db=db,
+        _=_,  # the auth dep was already satisfied for this request
+    )
+
+    model = get_model(db)
+    annotated: list[VesselAnomaly] = []
+    for v in base.vessels:
+        res = model.predict(v.sog, v.cog, v.heading)
+        annotated.append(
+            VesselAnomaly(
+                **v.model_dump(),
+                anomaly_score=res.score,
+                is_anomaly=res.is_anomaly,
+            )
+        )
+
+    return VesselAnomaliesResponse(
+        bbox=base.bbox,
+        fetched_at=base.fetched_at,
+        sources=[*base.sources, "isoforest"],
+        model_trained_on=model._train_n,  # noqa: SLF001 — train-count is for analyst transparency
+        vessels=annotated,
     )
 
 
