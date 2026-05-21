@@ -4,6 +4,7 @@ import { ScatterplotLayer } from "@deck.gl/layers";
 import { useCallback, useEffect, useState } from "react";
 
 import { api, ApiError, type FlightSnapshot, type LiveFlights } from "@/lib/api";
+import { usePinToActiveCase } from "@/lib/active-case";
 import { useMap } from "@/lib/map-context";
 
 const AVIATION_RGBA: [number, number, number, number] = [251, 191, 36, 230];
@@ -14,6 +15,7 @@ export default function AviationPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<FlightSnapshot | null>(null);
+  const { active: activeCase, pinned, pin, reset: resetPin } = usePinToActiveCase();
 
   const fetchFlights = useCallback(async () => {
     setBusy(true);
@@ -56,6 +58,7 @@ export default function AviationPage() {
   }, [data, selected, setLayer, removeLayer]);
 
   async function openFlight(hex: string) {
+    resetPin();
     try {
       const f = await api.aviation.flight(hex);
       setSelected(f);
@@ -170,6 +173,28 @@ export default function AviationPage() {
               {selected.lat.toFixed(3)}, {selected.lon.toFixed(3)}
             </dd>
           </dl>
+          {activeCase && (
+            <button
+              onClick={() =>
+                pin({
+                  kind: "aircraft",
+                  ref_id: selected.hex,
+                  label: selected.callsign ?? selected.flight ?? selected.hex,
+                  extra: {
+                    lat: selected.lat,
+                    lon: selected.lon,
+                    registration: selected.reg,
+                    type: selected.type,
+                    callsign: selected.callsign,
+                  },
+                })
+              }
+              className="btn w-full"
+              disabled={pinned}
+            >
+              {pinned ? `Pinned to "${activeCase.title}"` : `Pin to "${activeCase.title}"`}
+            </button>
+          )}
         </div>
       )}
     </div>

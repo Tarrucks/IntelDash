@@ -6,7 +6,9 @@
  * `useActiveCase()` and offer "Pin to active case" buttons.
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+
+import { api, ApiError } from "./api";
 
 const KEY = "aperture.active_case";
 const EVENT = "aperture:active-case-changed";
@@ -45,4 +47,52 @@ export function useActiveCase(): ActiveCase | null {
     };
   }, []);
   return active;
+}
+
+/**
+ * "Pin to active case" — shared logic for every dashboard.
+ *
+ * Returns `null` if there's no active case (caller should hide the
+ * button); otherwise an object the caller can wire into a button.
+ */
+export type PinPayload = {
+  kind: string;
+  ref_id: string;
+  label: string;
+  extra?: Record<string, unknown>;
+  notes?: string;
+};
+
+export function usePinToActiveCase(): {
+  active: ActiveCase | null;
+  pinned: boolean;
+  error: string | null;
+  pin: (payload: PinPayload) => Promise<void>;
+  reset: () => void;
+} {
+  const active = useActiveCase();
+  const [pinned, setPinned] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const pin = useCallback(
+    async (payload: PinPayload) => {
+      if (!active) return;
+      setPinned(false);
+      setError(null);
+      try {
+        await api.cases.pin(active.id, payload);
+        setPinned(true);
+      } catch (e) {
+        setError(e instanceof ApiError ? e.message : "Pin failed");
+      }
+    },
+    [active],
+  );
+
+  const reset = useCallback(() => {
+    setPinned(false);
+    setError(null);
+  }, []);
+
+  return { active, pinned, error, pin, reset };
 }

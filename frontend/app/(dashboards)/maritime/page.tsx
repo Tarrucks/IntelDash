@@ -12,7 +12,7 @@ import {
   type VesselDetail,
   type VesselTracks,
 } from "@/lib/api";
-import { useActiveCase } from "@/lib/active-case";
+import { usePinToActiveCase } from "@/lib/active-case";
 import { useMap } from "@/lib/map-context";
 
 // Cross-source colour map (RGBA). Matches Tailwind's `domain-maritime`
@@ -27,7 +27,7 @@ const SOURCE_COLOR: Record<string, [number, number, number, number]> = {
 
 export default function MaritimePage() {
   const { bbox, setLayer, removeLayer } = useMap();
-  const activeCase = useActiveCase();
+  const { active: activeCase, pinned, pin, reset: resetPin } = usePinToActiveCase();
   const [data, setData] = useState<LiveVessels | null>(null);
   const [anomalies, setAnomalies] = useState<VesselAnomalies | null>(null);
   const [showAnomalies, setShowAnomalies] = useState(false);
@@ -35,27 +35,20 @@ export default function MaritimePage() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<VesselDetail | null>(null);
   const [replay, setReplay] = useState<VesselTracks | null>(null);
-  const [pinned, setPinned] = useState(false);
 
   async function pinToActiveCase() {
-    if (!activeCase || !selected || !selected.last_position) return;
-    setPinned(false);
-    try {
-      await api.cases.pin(activeCase.id, {
-        kind: "vessel",
-        ref_id: selected.mmsi,
-        label: selected.name ?? `MMSI ${selected.mmsi}`,
-        extra: {
-          lat: selected.last_position.lat,
-          lon: selected.last_position.lon,
-          vessel_type: selected.vessel_type,
-          imo: selected.imo,
-        },
-      });
-      setPinned(true);
-    } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Pin failed");
-    }
+    if (!selected || !selected.last_position) return;
+    await pin({
+      kind: "vessel",
+      ref_id: selected.mmsi,
+      label: selected.name ?? `MMSI ${selected.mmsi}`,
+      extra: {
+        lat: selected.last_position.lat,
+        lon: selected.last_position.lon,
+        vessel_type: selected.vessel_type,
+        imo: selected.imo,
+      },
+    });
   }
 
   const fetchVessels = useCallback(async () => {
@@ -160,6 +153,7 @@ export default function MaritimePage() {
   async function openVessel(mmsi: string) {
     setSelected(null);
     setReplay(null);
+    resetPin();
     try {
       const d = await api.maritime.vessel(mmsi);
       setSelected(d);

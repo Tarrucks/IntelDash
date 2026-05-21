@@ -10,6 +10,7 @@ import {
   type CyberMonitor,
   type CyberSearch,
 } from "@/lib/api";
+import { usePinToActiveCase } from "@/lib/active-case";
 import { useMap } from "@/lib/map-context";
 
 const CYBER_RGBA: [number, number, number, number] = [192, 132, 252, 230];
@@ -23,6 +24,7 @@ export default function CyberPage() {
   const [monitors, setMonitors] = useState<CyberMonitor[]>([]);
   const [busy, setBusy] = useState<"host" | "search" | "monitor" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { active: activeCase, pinned, pin, reset: resetPin } = usePinToActiveCase();
 
   const refreshMonitors = useCallback(async () => {
     try {
@@ -39,6 +41,7 @@ export default function CyberPage() {
   async function lookup(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    resetPin();
     setBusy("host");
     try {
       const h = await api.cyber.host(ip.trim());
@@ -181,6 +184,30 @@ export default function CyberPage() {
                 ))}
               </ul>
             </div>
+          )}
+
+          {activeCase && (
+            <button
+              onClick={() =>
+                pin({
+                  kind: "host",
+                  ref_id: host.ip,
+                  label: host.hostnames[0] ?? host.ip,
+                  extra: {
+                    lat: host.latitude,
+                    lon: host.longitude,
+                    org: host.org,
+                    asn: host.asn,
+                    country: host.country_code,
+                    ports: host.ports,
+                  },
+                })
+              }
+              className="btn w-full"
+              disabled={pinned}
+            >
+              {pinned ? `Pinned to "${activeCase.title}"` : `Pin to "${activeCase.title}"`}
+            </button>
           )}
         </div>
       )}

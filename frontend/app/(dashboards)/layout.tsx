@@ -15,16 +15,26 @@ const MapCanvas = dynamic(() => import("@/lib/map-canvas").then((m) => m.MapCanv
 export default function DashboardsLayout({ children }: { children: ReactNode }) {
   return (
     <MapProvider>
+      <a href="#dashboard-panel" className="skip-link">
+        Skip to dashboard
+      </a>
       <div className="flex h-full flex-col">
         <GlobalHeader />
         <div className="flex flex-1 overflow-hidden">
           <Sidebar />
           {/* Two-pane split: panel on the left, shared map on the right. */}
           <main className="flex flex-1 overflow-hidden">
-            <section className="flex w-[420px] flex-col overflow-y-auto border-r border-border bg-bg p-4">
+            <section
+              id="dashboard-panel"
+              className="flex w-[420px] flex-col overflow-y-auto border-r border-border bg-bg p-4"
+              aria-label="Dashboard panel"
+            >
               {children}
             </section>
-            <section className="relative flex-1 bg-bg-panel">
+            <section
+              className="relative flex-1 bg-bg-panel"
+              aria-label="Geospatial map"
+            >
               <MapCanvas className="h-full w-full" />
             </section>
           </main>

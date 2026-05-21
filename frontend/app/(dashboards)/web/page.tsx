@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { api, ApiError, type WebAnswer, type WebSearch } from "@/lib/api";
+import { usePinToActiveCase } from "@/lib/active-case";
 
 type Tab = "search" | "answer";
 
@@ -13,6 +14,19 @@ export default function WebPage() {
   const [answer, setAnswer] = useState<WebAnswer | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { active: activeCase, pin } = usePinToActiveCase();
+  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
+
+  async function pinResult(url: string, title: string | null | undefined) {
+    if (!activeCase) return;
+    await pin({
+      kind: "url",
+      ref_id: url,
+      label: title ?? url,
+      extra: { source: "exa" },
+    });
+    setPinnedIds((prev) => new Set([...prev, url]));
+  }
 
   async function run(e: React.FormEvent) {
     e.preventDefault();
@@ -110,6 +124,16 @@ export default function WebPage() {
                   )}
                   {r.author && <span>· {r.author}</span>}
                   {r.published_date && <span>· {r.published_date.slice(0, 10)}</span>}
+                  {activeCase && (
+                    <button
+                      onClick={() => pinResult(r.url, r.title)}
+                      className="ml-auto btn px-2 py-0.5 text-[10px]"
+                      disabled={pinnedIds.has(r.url)}
+                      aria-label={`Pin "${r.title ?? r.url}" to case ${activeCase.title}`}
+                    >
+                      {pinnedIds.has(r.url) ? "Pinned" : `Pin to "${activeCase.title}"`}
+                    </button>
+                  )}
                 </div>
               </li>
             ))}

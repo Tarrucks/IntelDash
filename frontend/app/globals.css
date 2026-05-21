@@ -19,6 +19,13 @@
       "cv11";
   }
 
+  /* Visible focus rings for keyboard navigation. The Tailwind defaults
+     only kick in on :focus-visible — we restate that here so any nested
+     component that resets outlines doesn't drop a11y. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-bg;
+  }
+
   /* MapLibre canvas should fill its container without scroll bleed. */
   .maplibregl-canvas {
     outline: none;
@@ -35,7 +42,7 @@
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-md border border-border bg-bg-elevated px-3 py-1.5 text-sm font-medium text-fg transition-colors hover:bg-bg-panel focus:outline-none focus:ring-2 focus:ring-accent disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-border bg-bg-elevated px-3 py-1.5 text-sm font-medium text-fg transition-colors hover:bg-bg-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-primary {
@@ -48,5 +55,10 @@
 
   .label {
     @apply mb-1 block text-xs font-medium text-fg-muted;
+  }
+
+  /* Skip-to-content link, visually hidden until focused. */
+  .skip-link {
+    @apply absolute left-2 top-2 -translate-y-16 rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-fg transition-transform focus-visible:translate-y-0;
   }
 }

@@ -39,7 +39,10 @@ const SECONDARY: NavItem[] = [
 export function Sidebar() {
   const pathname = usePathname();
   return (
-    <aside className="flex w-56 flex-col gap-1 border-r border-border bg-bg-elevated p-3">
+    <aside
+      className="flex w-56 flex-col gap-1 border-r border-border bg-bg-elevated p-3"
+      aria-label="Dashboard navigation"
+    >
       <NavGroup label="Dashboards" items={PRIMARY} pathname={pathname} />
       <NavGroup label="Panels" items={SECONDARY} pathname={pathname} />
       <div className="mt-auto pt-3 text-[10px] uppercase tracking-wider text-fg-subtle">
@@ -59,7 +62,7 @@ function NavGroup({
   pathname: string;
 }) {
   return (
-    <div className="mb-3">
+    <nav className="mb-3" aria-label={label}>
       <div className="mb-1 px-2 text-[10px] font-medium uppercase tracking-wider text-fg-subtle">
         {label}
       </div>
@@ -71,6 +74,7 @@ function NavGroup({
             <li key={it.href}>
               <Link
                 href={it.href}
+                aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors",
                   active
@@ -85,6 +89,6 @@ function NavGroup({
           );
         })}
       </ul>
-    </div>
+    </nav>
   );
 }

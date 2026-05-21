@@ -13,7 +13,8 @@ const config: Config = {
     extend: {
       colors: {
         // Tokens kept terse and semantic so we can repaint without churning
-        // markup. Values picked for legible contrast on a dark canvas.
+        // markup. Values picked for legible contrast on a dark canvas
+        // (every accent/fg pair clears WCAG AA 4.5:1 against bg).
         bg: {
           DEFAULT: "hsl(220 13% 8%)",
           elevated: "hsl(220 13% 12%)",
@@ -21,8 +22,9 @@ const config: Config = {
         },
         fg: {
           DEFAULT: "hsl(210 20% 92%)",
-          muted: "hsl(220 8% 65%)",
-          subtle: "hsl(220 8% 45%)",
+          // bumped from 65% to 72% so AA contrast holds against bg-panel.
+          muted: "hsl(220 8% 72%)",
+          subtle: "hsl(220 8% 55%)",
         },
         border: {
           DEFAULT: "hsl(220 13% 22%)",
@@ -35,11 +37,11 @@ const config: Config = {
         // Cross-domain palette — same hues as the map layer overlays
         // so the UI and the map agree on what "maritime" means.
         domain: {
-          maritime: "hsl(200 80% 55%)",
-          aviation: "hsl(40 95% 60%)",
-          cyber: "hsl(280 70% 65%)",
-          web: "hsl(150 60% 55%)",
-          case: "hsl(0 0% 90%)",
+          maritime: "hsl(200 80% 65%)",
+          aviation: "hsl(40 95% 65%)",
+          cyber: "hsl(280 70% 70%)",
+          web: "hsl(150 60% 60%)",
+          case: "hsl(0 0% 95%)",
         },
       },
       fontFamily: {
