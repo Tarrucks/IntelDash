@@ -250,8 +250,25 @@ export default function CaseFilePage() {
             </ul>
           </div>
 
-          <div className="rounded border border-dashed border-border bg-bg p-2 text-[10px] text-fg-subtle">
-            PDF / STIX 2.1 export lands in Phase 7.
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={async () => {
+                try {
+                  await api.cases.downloadStix(
+                    selected.id,
+                    `aperture-${selected.title.replace(/\s+/g, "-").toLowerCase()}.stix.json`,
+                  );
+                } catch (e) {
+                  setError(e instanceof ApiError ? e.message : "Export failed");
+                }
+              }}
+              className="btn"
+            >
+              Export STIX 2.1
+            </button>
+            <span className="self-center text-[10px] text-fg-subtle">
+              PDF export lands in Phase 7.2.
+            </span>
           </div>
         </div>
       )}

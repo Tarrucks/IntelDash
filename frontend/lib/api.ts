@@ -395,6 +395,30 @@ export const api = {
     ) => request("POST", `/cases/${id}/pins`, payload, pinPublicSchema),
     unpin: (id: string, pin_id: number) =>
       request("DELETE", `/cases/${id}/pins/${pin_id}`),
+
+    /**
+     * Download the case as a STIX 2.1 bundle.
+     *
+     * We can't use a plain `<a href>` because the route requires the
+     * JWT in the Authorization header — fetch + blob + objectURL is the
+     * boring way to get an authenticated file download in the browser.
+     */
+    downloadStix: async (id: string, filename?: string) => {
+      const token = readToken();
+      const res = await fetch(`${BASE_URL}/cases/${id}/export.stix`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new ApiError(`HTTP ${res.status}`, res.status);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename ?? `aperture-case-${id}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    },
   },
 
   web: {

@@ -14,11 +14,13 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.auth.dependencies import get_current_user
 from app.core.db import get_db
+from app.exports.stix import build_bundle
 from app.models.entities import Case, CaseEntity, CaseStatus, Entity, User, UserRole
 from app.schemas.cases import (
     CaseCreate,
@@ -231,3 +233,34 @@ def unpin_entity(
         raise HTTPException(status_code=404, detail="pin not found")
     db.delete(pin)
     db.commit()
+
+
+# ---- Exports ---------------------------------------------------------------
+
+
+@router.get("/{case_id}/export.stix")
+def export_stix(
+    case_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> JSONResponse:
+    """STIX 2.1 bundle for this case.
+
+    Returns ``application/stix+json; version=2.1`` so downstream tools
+    that sniff content type (MISP, OpenCTI, …) pick it up correctly.
+    """
+    case = db.execute(
+        select(Case)
+        .options(selectinload(Case.pins).selectinload(CaseEntity.entity))
+        .where(Case.id == case_id)
+    ).scalar_one_or_none()
+    case = _ensure_visible(case, user)
+
+    owner = db.get(User, case.owner_id) if case.owner_id else None
+    bundle = build_bundle(case, owner)
+    filename = f"aperture-case-{case.id}.json"
+    return JSONResponse(
+        content=bundle,
+        media_type="application/stix+json; version=2.1",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
