@@ -1,0 +1,52 @@
+# Aperture backend — Fly.io deploy.
+#
+# This config builds from the repo root so the Docker image can pull in
+# data/seed for the Phase 1 Alembic seed. Place this file at the repo
+# root and run ``fly launch --no-deploy`` from the same directory.
+
+app = "aperture-backend"
+primary_region = "iad"
+
+[build]
+  dockerfile = "backend/Dockerfile"
+
+[env]
+  PORT = "8000"
+  APERTURE_USE_REAL_ADAPTERS = "true"
+  APERTURE_ENV = "prod"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  # Set to 1 for always-on; 0 lets Fly suspend the machine when idle.
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    grace_period = "15s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/health"
+
+[[vm]]
+  # 1 GB so scikit-learn + reportlab + the PostGIS-aware engine pool fit
+  # comfortably. shared-cpu-1x is cheap and plenty for v1 traffic.
+  size = "shared-cpu-1x"
+  memory = "1gb"
+
+# ----------------------------------------------------------------------------
+# Secrets to set after ``fly launch`` (run each separately):
+#
+#   fly secrets set \
+#     DATABASE_URL='postgresql+psycopg://...?sslmode=require' \
+#     REDIS_URL='rediss://...upstash...' \
+#     JWT_SECRET="$(openssl rand -hex 32)" \
+#     APERTURE_CORS_ORIGINS='https://<your-app>.vercel.app,https://<your-team>.vercel.app'
+#
+# Optional adapter creds:
+#   fly secrets set SHODAN_API_KEY=... EXA_API_KEY=... FR24_API_KEY=...
+#   fly secrets set AISHUB_USERNAME=...
+#   fly secrets set BARENTSWATCH_CLIENT_ID=... BARENTSWATCH_CLIENT_SECRET=...
+# ----------------------------------------------------------------------------

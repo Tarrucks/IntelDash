@@ -9,20 +9,24 @@ from __future__ import annotations
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.config import get_settings
 from app.routers import auth, aviation, cases, cyber, health, maritime, sensors, tooling, web
 
 
 def create_app() -> FastAPI:
+    settings = get_settings()
     app = FastAPI(
         title="Aperture",
         version="0.1.0",
         description="OSINT fusion platform — cyber + maritime + aviation + open-web.",
     )
 
-    # Local-dev CORS. Production deployments tighten this via env later.
+    # CORS allow-list is env-driven (APERTURE_CORS_ORIGINS, comma-separated)
+    # so production deploys (Vercel domain, preview deploys) don't need a
+    # code change. Dev default is localhost:3000.
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:3000"],
+        allow_origins=settings.cors_origins_list,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

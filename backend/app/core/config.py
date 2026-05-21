@@ -8,11 +8,16 @@ source adapter from mock to real, gated by ``use_real_adapters``.
 
 from __future__ import annotations
 
+import logging
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, computed_field
+from pydantic import Field, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+log = logging.getLogger("app.core.config")
+
+DEV_JWT_SECRET = "dev-only-change-me"  # noqa: S105
 
 
 class Settings(BaseSettings):
@@ -28,9 +33,15 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
 
     # --- Auth ----------------------------------------------------------------
-    jwt_secret: str = "dev-only-change-me"
+    jwt_secret: str = DEV_JWT_SECRET
     jwt_alg: Literal["HS256", "HS384", "HS512"] = "HS256"
     jwt_ttl_minutes: int = 60
+
+    # --- CORS ---------------------------------------------------------------
+    # Comma-separated list of origins allowed to call this backend. Default
+    # covers local dev; production deploys must add their Vercel domain
+    # via APERTURE_CORS_ORIGINS so the dashboard can actually reach the API.
+    aperture_cors_origins: str = "http://localhost:3000"
 
     # --- Source adapter credentials -----------------------------------------
     shodan_api_key: str | None = None
@@ -45,6 +56,23 @@ class Settings(BaseSettings):
     # --- Feature flags -------------------------------------------------------
     aperture_use_real_adapters: bool = True
     aperture_seed_on_boot: bool = True
+    aperture_env: Literal["dev", "staging", "prod"] = "dev"
+
+    @field_validator("jwt_secret")
+    @classmethod
+    def _warn_dev_secret(cls, v: str) -> str:
+        # Don't fail boot — local dev must still work — but make the leak
+        # impossible to miss when shipping a real deploy.
+        if v == DEV_JWT_SECRET:
+            log.warning(
+                "JWT_SECRET is the default dev value. " "Generate one with: openssl rand -hex 32"
+            )
+        return v
+
+    @computed_field  # type: ignore[misc]
+    @property
+    def cors_origins_list(self) -> list[str]:
+        return [o.strip() for o in self.aperture_cors_origins.split(",") if o.strip()]
 
     @computed_field  # type: ignore[misc]
     @property
