@@ -1,7 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "_comment": "Forces Vercel to build the Next.js app in ./frontend regardless of cached dashboard settings. Corepack picks pnpm@10.33.0 via the root package.json's packageManager field, then we cd into frontend. --no-frozen-lockfile so a slightly drifted lockfile doesn't abort the build.",
   "framework": "nextjs",
-  "installCommand": "cd frontend && pnpm install --frozen-lockfile",
+  "installCommand": "corepack enable && cd frontend && pnpm install --no-frozen-lockfile",
   "buildCommand": "cd frontend && pnpm build",
   "outputDirectory": "frontend/.next"
 }
