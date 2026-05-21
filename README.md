@@ -40,6 +40,12 @@ scripts/    One-off helpers (setup, seed, key generation)
 docs/       Long-form docs (analyst guide lands here in Phase 8)
 ```
 
+## Deploying
+
+Local development uses `docker compose`. For a cloud deploy
+(Vercel frontend + Fly.io backend + Timescale Cloud + Upstash Redis),
+see [`DEPLOY.md`](./DEPLOY.md).
+
 ## Tooling
 
 - **Backend:** Python 3.12 + [uv](https://docs.astral.sh/uv/) +
