@@ -121,3 +121,41 @@ class ShodanAdapter(SourceAdapter):
             )
             resp.raise_for_status()
             return ShodanSearchResponse.model_validate(resp.json())
+
+    # ---- Saved Monitors (Shodan Alerts API) ------------------------------
+
+    def create_alert(self, *, name: str, ip: str) -> str | None:
+        """Create an upstream Shodan alert.
+
+        In mock mode this is a no-op returning ``None``; in real mode it
+        calls ``POST /shodan/alert`` and returns the alert id.
+
+        Docs: https://developer.shodan.io/api (Saved Monitors / Alerts).
+        """
+        if self.mode == "mock":
+            return None
+        ok, retry = self.acquire(scope="alert")
+        if not ok:
+            raise RuntimeError(f"Rate-limited; retry in {retry:.1f}s")
+        with httpx.Client(timeout=15.0) as client:
+            resp = client.post(
+                f"{BASE_URL}/shodan/alert",
+                params={"key": self.settings.shodan_api_key},
+                json={"name": name, "filters": {"ip": ip}},
+            )
+            resp.raise_for_status()
+            return resp.json().get("id")
+
+    def delete_alert(self, alert_id: str) -> None:
+        """Delete an upstream Shodan alert by id (no-op in mock mode)."""
+        if self.mode == "mock":
+            return
+        ok, retry = self.acquire(scope="alert")
+        if not ok:
+            raise RuntimeError(f"Rate-limited; retry in {retry:.1f}s")
+        with httpx.Client(timeout=15.0) as client:
+            resp = client.delete(
+                f"{BASE_URL}/shodan/alert/{alert_id}",
+                params={"key": self.settings.shodan_api_key},
+            )
+            resp.raise_for_status()

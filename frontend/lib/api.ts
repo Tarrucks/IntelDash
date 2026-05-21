@@ -272,6 +272,18 @@ export const cyberSearchSchema = z.object({
 });
 export type CyberSearch = z.infer<typeof cyberSearchSchema>;
 
+export const cyberMonitorSchema = z.object({
+  id: z.string(),
+  ip: z.string(),
+  name: z.string(),
+  ports: z.array(z.number()),
+  notes: z.string().nullable().optional(),
+  upstream_alert_id: z.string().nullable().optional(),
+  source: z.string(),
+  created_at: z.string(),
+});
+export type CyberMonitor = z.infer<typeof cyberMonitorSchema>;
+
 // -------- Aviation ---------------------------------------------------------
 
 export const flightSnapshotSchema = z.object({
@@ -470,6 +482,14 @@ export const api = {
       const qs = new URLSearchParams({ q, limit: String(limit) }).toString();
       return request("GET", `/cyber/search?${qs}`, undefined, cyberSearchSchema);
     },
+    listMonitors: () => request("GET", "/cyber/monitors", undefined, z.array(cyberMonitorSchema)),
+    createMonitor: (payload: {
+      ip: string;
+      name: string;
+      ports?: number[];
+      notes?: string;
+    }) => request("POST", "/cyber/monitors", payload, cyberMonitorSchema),
+    deleteMonitor: (id: string) => request("DELETE", `/cyber/monitors/${id}`),
   },
 
   aviation: {

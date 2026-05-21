@@ -1,9 +1,15 @@
 "use client";
 
 import { ScatterplotLayer } from "@deck.gl/layers";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-import { api, ApiError, type CyberHost, type CyberSearch } from "@/lib/api";
+import {
+  api,
+  ApiError,
+  type CyberHost,
+  type CyberMonitor,
+  type CyberSearch,
+} from "@/lib/api";
 import { useMap } from "@/lib/map-context";
 
 const CYBER_RGBA: [number, number, number, number] = [192, 132, 252, 230];
@@ -14,8 +20,21 @@ export default function CyberPage() {
   const [host, setHost] = useState<CyberHost | null>(null);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CyberSearch | null>(null);
-  const [busy, setBusy] = useState<"host" | "search" | null>(null);
+  const [monitors, setMonitors] = useState<CyberMonitor[]>([]);
+  const [busy, setBusy] = useState<"host" | "search" | "monitor" | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const refreshMonitors = useCallback(async () => {
+    try {
+      setMonitors(await api.cyber.listMonitors());
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Failed to load monitors");
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshMonitors();
+  }, [refreshMonitors]);
 
   async function lookup(e: React.FormEvent) {
     e.preventDefault();
@@ -215,6 +234,153 @@ export default function CyberPage() {
           </ul>
         </div>
       )}
+
+      {/* Saved Shodan monitors */}
+      <SavedMonitors
+        monitors={monitors}
+        prefillIp={host?.ip ?? ip}
+        busy={busy === "monitor"}
+        onCreate={async (payload) => {
+          setBusy("monitor");
+          setError(null);
+          try {
+            await api.cyber.createMonitor(payload);
+            await refreshMonitors();
+          } catch (err) {
+            setError(err instanceof ApiError ? err.message : "Create monitor failed");
+          } finally {
+            setBusy(null);
+          }
+        }}
+        onDelete={async (id) => {
+          setBusy("monitor");
+          try {
+            await api.cyber.deleteMonitor(id);
+            await refreshMonitors();
+          } catch (err) {
+            setError(err instanceof ApiError ? err.message : "Delete monitor failed");
+          } finally {
+            setBusy(null);
+          }
+        }}
+      />
+    </div>
+  );
+}
+
+function SavedMonitors({
+  monitors,
+  prefillIp,
+  busy,
+  onCreate,
+  onDelete,
+}: {
+  monitors: CyberMonitor[];
+  prefillIp: string;
+  busy: boolean;
+  onCreate: (p: { ip: string; name: string; ports?: number[]; notes?: string }) => Promise<void>;
+  onDelete: (id: string) => Promise<void>;
+}) {
+  const [ip, setIp] = useState("");
+  const [name, setName] = useState("");
+  const [ports, setPorts] = useState("");
+  const [notes, setNotes] = useState("");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const portList = ports
+      .split(",")
+      .map((s) => parseInt(s.trim(), 10))
+      .filter((n) => Number.isFinite(n) && n > 0);
+    await onCreate({
+      ip: ip.trim(),
+      name: name.trim(),
+      ports: portList.length ? portList : undefined,
+      notes: notes.trim() || undefined,
+    });
+    setIp("");
+    setName("");
+    setPorts("");
+    setNotes("");
+  }
+
+  return (
+    <div className="surface space-y-3 p-3">
+      <div className="text-[10px] uppercase tracking-wider text-fg-subtle">
+        Saved monitors
+      </div>
+
+      <form onSubmit={submit} className="space-y-2">
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            value={ip}
+            onChange={(e) => setIp(e.target.value)}
+            placeholder={prefillIp || "IP or CIDR"}
+            required
+            className="input"
+            aria-label="IP or CIDR to watch"
+          />
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Monitor name"
+            required
+            className="input"
+            aria-label="Monitor name"
+          />
+        </div>
+        <input
+          value={ports}
+          onChange={(e) => setPorts(e.target.value)}
+          placeholder="Ports (comma-separated, optional)"
+          className="input"
+          aria-label="Ports"
+        />
+        <input
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Notes (optional)"
+          className="input"
+        />
+        <button type="submit" className="btn btn-primary w-full" disabled={busy}>
+          {busy ? "Saving…" : "Add monitor"}
+        </button>
+      </form>
+
+      <ul className="space-y-1 text-xs">
+        {monitors.map((m) => (
+          <li
+            key={m.id}
+            className="flex items-center justify-between rounded border border-border bg-bg-elevated p-2"
+          >
+            <div className="min-w-0">
+              <div className="font-medium text-fg">{m.name}</div>
+              <div className="font-mono text-fg-subtle">
+                {m.ip}
+                {m.ports.length > 0 ? `  · ports ${m.ports.join(",")}` : ""}
+              </div>
+              {m.notes && <div className="text-fg-muted">{m.notes}</div>}
+            </div>
+            <div className="flex shrink-0 items-center gap-1">
+              <span className="rounded bg-bg-panel px-1.5 py-0.5 font-mono text-[10px] uppercase text-fg-muted">
+                {m.source}
+              </span>
+              <button
+                onClick={() => onDelete(m.id)}
+                className="btn px-2 py-0.5 text-[10px]"
+                aria-label={`Delete monitor ${m.name}`}
+              >
+                Delete
+              </button>
+            </div>
+          </li>
+        ))}
+        {monitors.length === 0 && (
+          <li className="rounded border border-dashed border-border bg-bg p-2 text-center text-fg-subtle">
+            No monitors yet.
+          </li>
+        )}
+      </ul>
     </div>
   );
 }
