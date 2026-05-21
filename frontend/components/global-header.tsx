@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { clearAuth, isAuthenticated, readRole } from "@/lib/auth";
 import { cn } from "@/lib/cn";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 import { LogOut, Search } from "lucide-react";
 
@@ -34,6 +35,7 @@ export function GlobalHeader() {
       </div>
 
       <div className="flex items-center gap-3 text-sm">
+        <ThemeToggle />
         {authed ? (
           <>
             <span className="text-fg-muted">role:</span>

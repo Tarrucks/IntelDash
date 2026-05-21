@@ -12,36 +12,34 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Tokens kept terse and semantic so we can repaint without churning
-        // markup. Values picked for legible contrast on a dark canvas
-        // (every accent/fg pair clears WCAG AA 4.5:1 against bg).
+        // Tokens reference CSS variables defined in globals.css under
+        // ``:root`` (light) and ``.dark``. Tailwind's
+        // ``<alpha-value>`` placeholder lets utility classes apply
+        // alpha without us redefining a colour per opacity.
         bg: {
-          DEFAULT: "hsl(220 13% 8%)",
-          elevated: "hsl(220 13% 12%)",
-          panel: "hsl(220 13% 15%)",
+          DEFAULT: "hsl(var(--bg) / <alpha-value>)",
+          elevated: "hsl(var(--bg-elevated) / <alpha-value>)",
+          panel: "hsl(var(--bg-panel) / <alpha-value>)",
         },
         fg: {
-          DEFAULT: "hsl(210 20% 92%)",
-          // bumped from 65% to 72% so AA contrast holds against bg-panel.
-          muted: "hsl(220 8% 72%)",
-          subtle: "hsl(220 8% 55%)",
+          DEFAULT: "hsl(var(--fg) / <alpha-value>)",
+          muted: "hsl(var(--fg-muted) / <alpha-value>)",
+          subtle: "hsl(var(--fg-subtle) / <alpha-value>)",
         },
         border: {
-          DEFAULT: "hsl(220 13% 22%)",
-          strong: "hsl(220 13% 30%)",
+          DEFAULT: "hsl(var(--border) / <alpha-value>)",
+          strong: "hsl(var(--border-strong) / <alpha-value>)",
         },
         accent: {
-          DEFAULT: "hsl(195 90% 55%)",
-          fg: "hsl(220 13% 8%)",
+          DEFAULT: "hsl(var(--accent) / <alpha-value>)",
+          fg: "hsl(var(--accent-fg) / <alpha-value>)",
         },
-        // Cross-domain palette — same hues as the map layer overlays
-        // so the UI and the map agree on what "maritime" means.
         domain: {
-          maritime: "hsl(200 80% 65%)",
-          aviation: "hsl(40 95% 65%)",
-          cyber: "hsl(280 70% 70%)",
-          web: "hsl(150 60% 60%)",
-          case: "hsl(0 0% 95%)",
+          maritime: "hsl(var(--domain-maritime) / <alpha-value>)",
+          aviation: "hsl(var(--domain-aviation) / <alpha-value>)",
+          cyber: "hsl(var(--domain-cyber) / <alpha-value>)",
+          web: "hsl(var(--domain-web) / <alpha-value>)",
+          case: "hsl(var(--domain-case) / <alpha-value>)",
         },
       },
       fontFamily: {

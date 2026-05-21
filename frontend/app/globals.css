@@ -3,8 +3,45 @@
 @tailwind utilities;
 
 @layer base {
+  /* Light tokens (default for the unprefixed root). Tailwind references
+     these via ``hsl(var(--token) / <alpha>)``; switching themes is just
+     re-defining the variables under ``.dark``. */
   :root {
+    color-scheme: light;
+    --bg: 0 0% 100%;
+    --bg-elevated: 220 13% 96%;
+    --bg-panel: 220 13% 92%;
+    --fg: 220 13% 12%;
+    --fg-muted: 220 8% 35%;
+    --fg-subtle: 220 8% 50%;
+    --border: 220 13% 82%;
+    --border-strong: 220 13% 72%;
+    --accent: 195 90% 40%;
+    --accent-fg: 0 0% 100%;
+    --domain-maritime: 200 90% 40%;
+    --domain-aviation: 35 95% 45%;
+    --domain-cyber: 280 70% 45%;
+    --domain-web: 150 60% 35%;
+    --domain-case: 220 13% 25%;
+  }
+
+  .dark {
     color-scheme: dark;
+    --bg: 220 13% 8%;
+    --bg-elevated: 220 13% 12%;
+    --bg-panel: 220 13% 15%;
+    --fg: 210 20% 92%;
+    --fg-muted: 220 8% 72%;
+    --fg-subtle: 220 8% 55%;
+    --border: 220 13% 22%;
+    --border-strong: 220 13% 30%;
+    --accent: 195 90% 55%;
+    --accent-fg: 220 13% 8%;
+    --domain-maritime: 200 80% 65%;
+    --domain-aviation: 40 95% 65%;
+    --domain-cyber: 280 70% 70%;
+    --domain-web: 150 60% 60%;
+    --domain-case: 0 0% 95%;
   }
 
   html,

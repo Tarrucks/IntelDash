@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
+import { themeInitScript } from "@/lib/theme";
+
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -10,9 +12,15 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  // `dark` class is on <html> by default — light mode toggle lands in Phase 8.
+  // The default ``dark`` class is set here so SSR markup is consistent;
+  // the blocking init script below mutates it before first paint to
+  // match the user's stored preference. This avoids a flash of the
+  // wrong theme without needing useEffect-based hydration tricks.
   return (
-    <html lang="en" className="dark h-full">
+    <html lang="en" className="dark h-full" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className="h-full">{children}</body>
     </html>
   );
