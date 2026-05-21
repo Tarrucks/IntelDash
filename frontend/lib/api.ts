@@ -25,6 +25,30 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * Authenticated browser download: fetch with the JWT, materialise the
+ * response as a Blob, trigger a `<a download>` click. A plain anchor
+ * href can't carry the Authorization header.
+ */
+async function authedDownload(path: string, filename: string): Promise<void> {
+  const token = readToken();
+  const res = await fetch(`${BASE_URL}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) {
+    throw new ApiError(`HTTP ${res.status} ${res.statusText}`, res.status);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 async function request<T>(
   method: string,
   path: string,
@@ -403,22 +427,10 @@ export const api = {
      * JWT in the Authorization header — fetch + blob + objectURL is the
      * boring way to get an authenticated file download in the browser.
      */
-    downloadStix: async (id: string, filename?: string) => {
-      const token = readToken();
-      const res = await fetch(`${BASE_URL}/cases/${id}/export.stix`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!res.ok) throw new ApiError(`HTTP ${res.status}`, res.status);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename ?? `aperture-case-${id}.json`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    },
+    downloadStix: (id: string, filename?: string) =>
+      authedDownload(`/cases/${id}/export.stix`, filename ?? `aperture-case-${id}.json`),
+    downloadPdf: (id: string, filename?: string) =>
+      authedDownload(`/cases/${id}/export.pdf`, filename ?? `aperture-case-${id}.pdf`),
   },
 
   web: {

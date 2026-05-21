@@ -14,12 +14,13 @@ from __future__ import annotations
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.auth.dependencies import get_current_user
 from app.core.db import get_db
+from app.exports.pdf import render_case_pdf
 from app.exports.stix import build_bundle
 from app.models.entities import Case, CaseEntity, CaseStatus, Entity, User, UserRole
 from app.schemas.cases import (
@@ -262,5 +263,29 @@ def export_stix(
     return JSONResponse(
         content=bundle,
         media_type="application/stix+json; version=2.1",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.get("/{case_id}/export.pdf")
+def export_pdf(
+    case_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> Response:
+    """Analyst-readable PDF dossier for this case."""
+    case = db.execute(
+        select(Case)
+        .options(selectinload(Case.pins).selectinload(CaseEntity.entity))
+        .where(Case.id == case_id)
+    ).scalar_one_or_none()
+    case = _ensure_visible(case, user)
+
+    owner = db.get(User, case.owner_id) if case.owner_id else None
+    pdf_bytes = render_case_pdf(case, owner)
+    filename = f"aperture-case-{case.id}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
