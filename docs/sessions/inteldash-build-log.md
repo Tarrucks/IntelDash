@@ -16,7 +16,7 @@
 | Code | 10,351 LOC (7,033 Python · 3,318 TS/TSX) |
 | Surface area | 29 API endpoints · 9 adapters (mock-by-default) · 5 dashboards · 106 test functions |
 | Keys required to boot | **0** |
-| Repo | `Tarrucks/IntelDash` — **private** |
+| Repo | [`Tarrucks/IntelDash`](https://github.com/Tarrucks/IntelDash) — public |
 
 **The discipline of this piece: receipts, not adjectives.** Every number above is a command you can run against the repo; the exact outputs are pasted in the [Receipts](#receipts) section at the end. Where the work is mock rather than live, this says so. Where a thing was attempted but didn't land, this says that too.
 
@@ -139,7 +139,7 @@ The agent had left a JSON "comment" key explaining the overrides; Vercel's schem
 Two places where holding to "check the hashes" means correcting the optimistic version of events:
 
 - **There is no `v0.1.0` git tag.** `git tag -l` is empty locally *and* on the remote. The Phase 8.4 commit (`3a98117`) is honest about why: the container's git remote 403s every tag push, so the release notes were mirrored into `CHANGELOG.md` as a `[0.1.0]` block instead. "v0.1.0" is a CHANGELOG entry and a commit, not a tag. The user can `git push origin v0.1.0` from a normal client.
-- **The repo is private.** Earlier drafts of this writeup claimed "the commits are public" — they aren't (`visibility: private`). The receipts below are inlined precisely *because* you can't click through to verify them yourself today.
+- **"Public" was claimed before it was true.** Earlier drafts said "the commits are public" while the repo was still private — caught against the GitHub API (`visibility: private`) and corrected. The repo has since been made public, so every receipt below is now also clickable: [github.com/Tarrucks/IntelDash](https://github.com/Tarrucks/IntelDash). The inline outputs stay regardless — a reader shouldn't have to leave the page to check a claim.
 
 This section exists on purpose: a builder piece that corrects its own headline is more credible than one that doesn't have to.
 
@@ -179,7 +179,7 @@ $ git grep -nE 'TODO\(real-impl\)' -- 'backend/app/adapters/*.py' | wc -l
 
 *Note on the test number:* 106 is the **collected count** (`grep 'def test_'`), not a live "106 passed" — the suite runs against a Postgres + Redis container per `conftest.py`, and green-at-each-phase-boundary is the gate that lets the agent advance. It is not reproducible inside this writeup's sandbox (no DB, sklearn absent), so it's reported as a count, not a pass.
 
-**Repo visibility** — `GET /repos/Tarrucks/IntelDash` → `"visibility": "private"`, `"name": "IntelDash"`, default branch `claude/build-aperture-osint-bprmS`.
+**Repo visibility** — `GET /repos/Tarrucks/IntelDash` → `"private": false` as of 2026-06-11 (it was `"visibility": "private"` when first checked earlier the same day — see the correction above); default branch `claude/build-aperture-osint-bprmS`.
 
 **Full timeline** — `git log --reverse`:
 
