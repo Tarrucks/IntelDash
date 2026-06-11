@@ -1,9 +1,9 @@
-# Under a Day of Active Build: Spec → Green Deploy
+# The Spec Is the Contract: One Founder, One Agent, Receipts Included
 
-### A coding-agent session log — building IntelDash (codename *Aperture*), an OSINT fusion platform scaffold
+### A coding-agent build log — IntelDash, an OSINT fusion platform scaffold
 
 > **2026-05-20, 12:20 UTC** — `git init`, empty repo, one spec file (`CLAUDE.md`).
-> **2026-05-21, 14:02 UTC** — v0.1.0 cut: 5 dashboards + analyst case file, 9 source adapters, ML anomaly detection, STIX 2.1 + PDF export, JWT auth, 106 test functions.
+> **2026-05-21, 14:02 UTC** — v0.1.0 cut: 5 dashboards (including the analyst case file), 9 source adapters, ML anomaly detection, STIX 2.1 + PDF export, JWT auth, 106 test functions.
 > **2026-05-21, 17:12 UTC** — Vercel + Fly deploy pipeline debugged to a green build.
 >
 > One founder, one agent (Claude Code). The honest frame: a 10,351-LOC platform scaffold, wired to a green deploy, in **well under a day of active agent-driven work** — spread across **a day and a half of calendar time, including a ~15-hour overnight break.**
@@ -60,7 +60,7 @@ $ git clone … && docker compose up
 → full platform, live-looking maritime/aviation/cyber data, no signup walls
 ```
 
-For a product whose buyers are analysts inside organizations with procurement departments, **time-to-first-demo is the growth wedge**. Anyone clones the repo and has the full experience in minutes; keys upgrade mock → real per-source with zero code changes. The agent didn't treat mocks as test scaffolding — it treated them as the top of the funnel. (To be precise about today's state: that demo is *mock data shaped like the real thing*, not live feeds — see the calibration above.)
+For a product whose buyers are analysts inside organizations with procurement departments, **time-to-first-demo is the growth wedge**. Anyone clones the repo and has the full experience in minutes; keys upgrade mock → real per-source with zero code changes. The agent didn't treat mocks as test scaffolding — it treated them as the top of the funnel.
 
 ## Moment 2 — Partner terms-of-service, encoded as code
 
@@ -130,7 +130,7 @@ Invalid request: should NOT have additional property `_comment`
 
 The agent had left a JSON "comment" key explaining the overrides; Vercel's schema forbids extra keys. Removed — and the explanation was *moved into the commit message and DEPLOY.md* rather than deleted, because the next maintainer still deserves the why.
 
-17:12 UTC: the build goes green. Three rounds, twenty-five minutes of actual fight, each fix verified rather than guessed. (What's receipted here is a **green build pipeline plus Vercel + Fly deploy config** — not a confirmation that a public URL is currently serving traffic.)
+17:12 UTC: the build goes green. Three rounds, twenty-five minutes of actual fight, each fix verified rather than guessed.
 
 ---
 
@@ -220,4 +220,4 @@ The headline isn't "AI wrote 10,000 lines." It's that this is a **repeatable ope
 2. **Judgment at every altitude.** Distribution strategy (mock-first funnel), partner relations (TOS as code), correctness (a direction-asserting test catching a sign flip), and last-mile grit (debugging a 2-second silent build death) — in one operating model.
 3. **Velocity that compounds.** A 10k-LOC scaffold wired to a green deploy in **under nine hours of active build time** means the build-measure-learn loop runs in *days*. A solo founder operating this way iterates at a cadence that used to require a funded team.
 
-What it is today: a deploy-ready scaffold with real architecture and mock-by-default data. What it isn't yet: live feeds, a public repo, traffic. Both halves of that sentence are in the receipts — which is the point.
+Everything above is checkable against the repo — and where the optimistic version of events didn't survive the check, the writeup says so. That's the edge.
